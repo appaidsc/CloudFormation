@@ -1,10 +1,10 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Create an S3 bucket with a given name
+Description: Create an S3 bucket using a parameter.
 
 Parameters:
   BucketName:
     Type: String
-    Description: Name of the S3 bucket to create
+    Description: Name of the S3 bucket
 
 Resources:
   S3Bucket:
@@ -13,6 +13,6 @@ Resources:
       BucketName: !Ref BucketName
 
 Outputs:
-  BucketNameOutput:
-    Description: Created S3 Bucket Name
+  BucketName:
+    Description: Name of the created bucket
     Value: !Ref S3Bucket
