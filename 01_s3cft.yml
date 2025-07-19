@@ -1,18 +1,18 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Create an S3 bucket with a specific name
+Description: CloudFormation template to create an S3 bucket
 
 Parameters:
   BucketName:
     Type: String
-    Description: The name of the S3 bucket
+    Description: Name of the S3 bucket
 
 Resources:
-  S3Bucket:
+  MyS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Ref BucketName
 
 Outputs:
-  BucketName:
-    Description: Name of the created S3 bucket
-    Value: !Ref S3Bucket
+  BucketNameOutput:
+    Description: The name of the bucket
+    Value: !Ref MyS3Bucket
