@@ -2,22 +2,21 @@ pipeline {
     agent any
 
     parameters {
-        choice(name: 'DEPLOY_TYPE', choices: ['s3', 'ec2'], description: 'Choose resource type to deploy')
+        choice(name: 'DEPLOY_TYPE', choices: ['s3', 'ec2'], description: 'Choose the resource type to deploy')
+
+        choice(name: 'AWS_REGION', choices: ['us-east-1', 'us-west-1', 'ap-south-1', 'eu-central-1'], description: 'Choose AWS region')
 
         string(name: 'STACK_NAME', defaultValue: 'example-stack', description: 'CloudFormation Stack Name')
 
-        // Visible only if S3 is selected
-        string(name: 'BUCKET_NAME', defaultValue: '', description: 'S3 Bucket Name (Only for S3)')
+        choice(name: 'TEMPLATE_FILE', choices: ['01_s3cft.yml', '02_ec2cft.yml'], description: 'Select appropriate CloudFormation template')
 
-        // Visible only if EC2 is selected
-        string(name: 'INSTANCE_NAME', defaultValue: '', description: 'EC2 Instance Name (Only for EC2)')
+        string(name: 'BUCKET_NAME', defaultValue: '', description: 'Bucket name (Only for S3)')
 
-        // Template file selection
-        choice(name: 'TEMPLATE_FILE', choices: ['01_s3cft.yml', '02_ec2cft.yml'], description: 'Choose CloudFormation Template File')
+        string(name: 'INSTANCE_NAME', defaultValue: '', description: 'EC2 instance name (Only for EC2)')
     }
 
     environment {
-        AWS_DEFAULT_REGION = 'us-east-1'
+        AWS_DEFAULT_REGION = "${params.AWS_REGION}"
     }
 
     stages {
@@ -30,21 +29,29 @@ pipeline {
         stage('Deploy CloudFormation Stack') {
             steps {
                 script {
-                    def deployCmd = """
+                    def baseCmd = """
                         aws cloudformation deploy \
                           --stack-name ${params.STACK_NAME} \
                           --template-file ${params.TEMPLATE_FILE} \
-                          --region ${AWS_DEFAULT_REGION}
+                          --region ${params.AWS_REGION}
                     """
 
-                    if (params.DEPLOY_TYPE == "s3") {
-                        deployCmd += " --parameter-overrides BucketName=${params.BUCKET_NAME}"
-                    } else if (params.DEPLOY_TYPE == "ec2") {
-                        deployCmd += " --parameter-overrides InstanceName=${params.INSTANCE_NAME}"
+                    if (params.DEPLOY_TYPE == 's3') {
+                        if (!params.BUCKET_NAME?.trim()) {
+                            error "BUCKET_NAME must be provided for S3 deployments."
+                        }
+                        baseCmd += " --parameter-overrides BucketName=${params.BUCKET_NAME}"
+                    } else if (params.DEPLOY_TYPE == 'ec2') {
+                        if (!params.INSTANCE_NAME?.trim()) {
+                            error "INSTANCE_NAME must be provided for EC2 deployments."
+                        }
+                        baseCmd += " --parameter-overrides InstanceName=${params.INSTANCE_NAME}"
+                    } else {
+                        error "Invalid DEPLOY_TYPE selected."
                     }
 
-                    echo "Running deployment command..."
-                    sh deployCmd
+                    echo "Running CloudFormation deployment..."
+                    sh baseCmd
                 }
             }
         }
@@ -57,7 +64,7 @@ pipeline {
                 sh """
                     aws cloudformation describe-stacks \
                       --stack-name ${params.STACK_NAME} \
-                      --region ${AWS_DEFAULT_REGION} \
+                      --region ${params.AWS_REGION} \
                       --query "Stacks[0].Outputs" \
                       --output table
                 """
