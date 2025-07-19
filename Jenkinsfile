@@ -23,7 +23,7 @@ pipeline {
     stages {
         stage('Checkout Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/riteshbehal/devopscourse.git'
+                git branch: 'main', url: 'https://github.com/riteshbehal/CloudFormation.git'
             }
         }
 
