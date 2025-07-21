@@ -1,37 +1,33 @@
-pipeline {
-    agent any
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Simple EC2 instance without SSH key pair (Amazon Linux 2)
 
-    parameters {
-        string(name: 'STACK_NAME', defaultValue: 'ec2-stack', description: 'CloudFormation Stack Name')
-        string(name: 'TEMPLATE_FILE', defaultValue: '02_ec2cft.yml', description: 'CloudFormation Template File')
-        string(name: 'INSTANCE_NAME', defaultValue: 'my-ec2-instance', description: 'EC2 Instance Name')
-        choice(name: 'REGION', choices: ['us-east-1', 'us-west-1', 'ap-south-1'], description: 'AWS Region')
-    }
+Parameters:
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t3.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+      - t3.small
+    ConstraintDescription: Must be a valid EC2 instance type.
 
-    environment {
-        AWS_DEFAULT_REGION = "${params.REGION}"
-    }
+  AmiId:
+    Description: Amazon Linux 2 AMI ID for eu-north-1
+    Type: String
+    Default: ami-06dfd44b8aa8c74fd  # ✅ Verified working as of July 2025
 
-    stages {
-        stage('Checkout Repository') {
-            steps {
-                git branch: 'main', url: 'https://github.com/riteshbehal/CloudFormation.git'
-            }
-        }
+Resources:
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref AmiId
+      Tags:
+        - Key: Name
+          Value: EC2WithoutKeyPair
 
-        stage('Deploy EC2 Stack') {
-            steps {
-                script {
-                    echo "Running CloudFormation deployment for EC2..."
-                    sh """
-                        aws cloudformation deploy \
-                          --stack-name ${params.STACK_NAME} \
-                          --template-file ${params.TEMPLATE_FILE} \
-                          --region ${params.REGION} \
-                          --parameter-overrides InstanceName=${params.INSTANCE_NAME}
-                    """
-                }
-            }
-        }
-    }
-}
+Outputs:
+  InstanceId:
+    Description: ID of the created EC2 instance
+    Value: !Ref EC2Instance
