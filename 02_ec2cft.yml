@@ -1,38 +1,28 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Create an EC2 instance with a specific name
+Description: Simple EC2 instance without SSH key pair
 
 Parameters:
-  InstanceName:
+  InstanceType:
+    Description: EC2 instance type
     Type: String
-    Description: Name for the EC2 instance
+    Default: t3.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+      - t3.small
+    ConstraintDescription: Must be a valid EC2 instance type.
 
 Resources:
-  EC2SecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Enable SSH access
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
-
   EC2Instance:
     Type: AWS::EC2::Instance
     Properties:
-      InstanceType: t2.micro
-      ImageId: ami-0c7217cdde317cfec  # Amazon Linux 2 AMI (us-east-1)
-      SecurityGroupIds:
-        - !Ref EC2SecurityGroup
+      InstanceType: !Ref InstanceType
+      ImageId: ami-0cbe2951c50b70a48  # Amazon Linux 2 in eu-north-1 (replace if needed)
       Tags:
         - Key: Name
-          Value: !Ref InstanceName
+          Value: EC2WithoutKeyPair
 
 Outputs:
-  InstanceID:
+  InstanceId:
     Description: The Instance ID
     Value: !Ref EC2Instance
-
-  PublicIP:
-    Description: Public IP of the Instance
-    Value: !GetAtt EC2Instance.PublicIp
